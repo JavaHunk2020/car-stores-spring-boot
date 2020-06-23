@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import javax.transaction.Transactional;
 
@@ -12,11 +13,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.cubic.it.cars.controller.vo.CarDTO;
+import com.cubic.it.cars.controller.vo.CarPriceDTO;
 import com.cubic.it.cars.controller.vo.UserDTO;
 import com.cubic.it.cars.dao.CarDaoRepository;
 import com.cubic.it.cars.dao.CarPriceRepository;
 import com.cubic.it.cars.dao.UserRepository;
 import com.cubic.it.cars.entity.CarEntity;
+import com.cubic.it.cars.entity.CarPriceEntity;
 import com.cubic.it.cars.entity.UserEntity;
 
 @Service
@@ -35,6 +38,27 @@ public class CarServiceImpl  implements CarService{
 	
 	@Autowired
 	private UserRepository  userRepository;
+	
+	@Override
+	public void deletePriceByCid(int cid)  {
+		carPriceRepository.deleteByCid(cid);
+	}
+	
+	@Override
+	public void deleteByCid(int cid)  {
+		carDaoRepository.deleteById(cid);
+	}
+	
+	@Override
+	public List<CarPriceDTO>  carPrices(int cid) {
+		 List<CarPriceEntity> list=carPriceRepository.findByCid(cid);
+		 return list.stream(). //converting list into Stream<CarPriceEntity>
+			map(entity->{   // //converting Stream<CarPriceEntity> into Stream<CarPriceDTO>
+			 CarPriceDTO carPriceDTO=new CarPriceDTO();
+			 BeanUtils.copyProperties(entity, carPriceDTO);
+			 return carPriceDTO; 
+		 }).collect(Collectors.toList()); //collecting Stream<CarPriceDTO> into List<CarPriceDTO>
+	}
 	
 	@Override
 	public UserDTO validateUser(String username,String password) {
@@ -64,6 +88,17 @@ public class CarServiceImpl  implements CarService{
 			carDTOs.add(carDTO);
 		}
 		return carDTOs;
+	}
+	
+	@Override
+	public Optional<CarDTO> findById(int cid) {
+		Optional<CarEntity> optional=carDaoRepository.findById(cid);
+		CarDTO carDTO=null;
+		if(optional.isPresent()) {
+			carDTO=new CarDTO();
+			BeanUtils.copyProperties(optional.get(), carDTO);
+		}
+		return Optional.ofNullable(carDTO);
 	}
 
 	@Override
